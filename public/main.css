@@ -72,3 +72,7 @@ body {
   color: white;
   border-color: white;
 }
+
+.hidden {
+  display: none;
+}

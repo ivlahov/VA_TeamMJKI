@@ -44,16 +44,19 @@ socket.on("switch-vis", (visData) => {
 // Button Handler
 document.getElementById("id_vis_1_designer").addEventListener("click", () => {
   socket.emit("vis_1_designer")
+  document.getElementById("divCheckbox").style.display = "none"
   console.log("Vis 1")
 })
 
 document.getElementById("id_vis_2_minage_minplaytime").addEventListener("click", () => {
   socket.emit("vis_2_minage_minplaytime")
+  document.getElementById("divCheckbox").style.display = "none"
   console.log("Vis 2")
 })
 
 document.getElementById("id_vis_4_kmeans").addEventListener("click", () => {
   socket.emit("vis_4_kmeans")
+  document.getElementById("divCheckbox").style.display = "block"
   console.log("Vis 4")
 })
 
