@@ -8,15 +8,17 @@ svg {
   margin: 0;
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  
 }
 
 /* Grid-Layouting the Dashboard */
 body {
   display: grid;
 
-  grid-template-areas: "header" "content";
+  grid-template-areas: "header header"
+                       "content interactivity";
   grid-template-rows: 100px auto;
+  grid-template-columns: auto 200px;
 }
 
 /* Layouting and styling the Header */
@@ -75,4 +77,39 @@ body {
 
 .hidden {
   display: none;
+  flex-direction: column;
+  align-items:center;
+}
+
+.interactivity {
+  margin: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items:center;
+  cursor: default;
+}
+
+.checkContainer{
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.checkContainer input[type="checkbox"]:hover {
+  cursor: pointer;
+}
+
+#cluster1 {
+  accent-color: blue;
+}
+
+#cluster2 {
+  accent-color: orange;
+}
+
+#cluster3 {
+  accent-color: cyan;
+}
+
+#cluster4 {
+  accent-color: green;
 }

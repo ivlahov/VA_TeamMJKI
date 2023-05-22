@@ -93,8 +93,7 @@ function calculate_new_centroids(datapoints, centroids) {
       centroids_changed = true
     }
   }
-  
-  return { centroids_changed }
+  return centroids_changed
 }
 
 /**
@@ -123,6 +122,8 @@ function get_random_centroids(datapoints, k) {
     centroids.push({x: x_random, y: y_random})
   }
 
+  centroids.sort((a,b) => a.x - b.x)
+
   return centroids
 }
 
@@ -133,7 +134,7 @@ function kmeans (datapoints, k) {
   assign_datapoints_to_centroids(datapoints, centroids)
   
   iteration_count = 0;
-  while (calculate_new_centroids (datapoints, centroids) && iteration_count <= 20000){
+  while (calculate_new_centroids (datapoints, centroids) && iteration_count <= 2000){
     assign_datapoints_to_centroids(datapoints, centroids)
     iteration_count++
   } 
