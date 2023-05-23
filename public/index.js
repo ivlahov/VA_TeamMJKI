@@ -67,6 +67,7 @@ document.getElementById("id_vis_3_lda").addEventListener("click", () => {
 })
 
 document.getElementById("id_vis_4_kmeans").addEventListener("click", () => {
+  removeVis_3()
   socket.emit("vis_4_kmeans")
   document.getElementById("cluster1").checked = false;
   document.getElementById("cluster2").checked = false;
