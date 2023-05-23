@@ -2,10 +2,10 @@ function print_hello_world() {
   console.log("Hello World!")
 }
 
-// Set margins and dimensions for the vis
-const margin = { top: 100, right: 75, bottom: 100, left: 50 }
-const width = 1600 - margin.left - margin.right
-const height = 700 - margin.top - margin.bottom
+  // Set margins and dimensions for the vis
+  const margin = {top: 100, right: 75, bottom: 100, left: 50}
+  const width = window.innerWidth - 200 - margin.left - margin.right
+  const height = window.innerHeight - 100 - margin.top - margin.bottom
 
 // Create an SVG element
 const svg = d3.select("#svgRoot")
@@ -17,6 +17,8 @@ const svg = d3.select("#svgRoot")
 
 let vis = null
 let data = null
+let kmeanData = null
+let clusterHighlight = [false, false, false, false]
 
 const socket = io()
 
@@ -66,9 +68,48 @@ document.getElementById("id_vis_3_lda").addEventListener("click", () => {
 
 document.getElementById("id_vis_4_kmeans").addEventListener("click", () => {
   socket.emit("vis_4_kmeans")
-  document.getElementById("divCheckbox").style.display = "block"
-  removeVis_3()
+  document.getElementById("cluster1").checked = false;
+  document.getElementById("cluster2").checked = false;
+  document.getElementById("cluster3").checked = false;
+  document.getElementById("cluster4").checked = false;
+  document.getElementById("divCheckbox").style.display = "flex"
   console.log("Vis 4")
+})
+
+document.getElementById("cluster1").addEventListener("change", (event) => {
+  if (event.target.checked){
+    clusterHighlight[0]= true;
+  } else {
+    clusterHighlight[0]= false;
+  }
+  highlightVis_4 (kmeanData, clusterHighlight)
+})
+
+document.getElementById("cluster2").addEventListener("change", (event) => {
+  if (event.target.checked){
+    clusterHighlight[1]= true;
+  } else {
+    clusterHighlight[1]= false;
+  }
+  highlightVis_4 (kmeanData, clusterHighlight)
+})
+
+document.getElementById("cluster3").addEventListener("change", (event) => {
+  if (event.target.checked){
+    clusterHighlight[2]= true;
+  } else {
+    clusterHighlight[2]= false;
+  }
+  highlightVis_4 (kmeanData, clusterHighlight)
+})
+
+document.getElementById("cluster4").addEventListener("change", (event) => {
+  if (event.target.checked){
+    clusterHighlight[3]= true;
+  } else {
+    clusterHighlight[3]= false;
+  }
+  highlightVis_4 (kmeanData, clusterHighlight)
 })
 
 /** 
@@ -562,6 +603,9 @@ function createVis_4(data) {
 
   kmeans(vis4_data, 4);
 
+  kmeanData = vis4_data;
+  clusterHighlight = [false, false, false, false]
+
   svg.selectAll("*").remove()
 
   // Define scales for x and y axes
@@ -572,13 +616,6 @@ function createVis_4(data) {
   const y = d3.scaleLinear()
     .domain([0, d3.max(vis4_data, function (d) { return d.y }) + 30])
     .range([height, 0])
-
-  //Add jitter to avoid overlapping
-  const jitter_x = 10
-  const jitter_y = 1
-  var xJitter = d3.randomUniform(-jitter_x, jitter_x)
-  var yJitter = d3.randomUniform(-jitter_y, jitter_y)
-
 
   // Create x and y axes
   const xAxis = d3.axisBottom(x)
@@ -607,17 +644,17 @@ function createVis_4(data) {
 
   // Color scale: give me a specie name, I return a color
   var color = d3.scaleOrdinal()
-    .domain([1, 2, 3, 4, 5, 99])
-    .range(["green", "orange", "blue", "cyan", "pink", "red"])
+    .domain([1,2,3,4,5,99])
+    .range([ "blue", "orange", "cyan", "green", "pink", "red"])
 
-  // Add data points to the plot
-  svg.selectAll("circle")
-    .data(vis4_data)
-    .enter().append("circle")
-    .attr("r", 3)
-    .attr("cx", function (d) { return x(d.x) + xJitter() })
-    .attr("cy", function (d) { return y(d.y) + yJitter() })
-    .style("fill", function (d) { return color(d.cluster) })
+ // Add data points to the plot
+ svg.selectAll("circle")
+     .data(vis4_data)
+     .enter().append("circle")
+     .attr("r", 3)
+     .attr("cx", function(d) { return x(d.x) })
+     .attr("cy", function(d) { return y(d.y) })
+     .style("fill", function (d) { return color(d.cluster) } )
 
   //Add title
   svg.append("text")
@@ -630,3 +667,83 @@ function createVis_4(data) {
 
 }
 
+function highlightVis_4 (data, clusterHighlight){
+
+  svg.selectAll("*").remove()
+
+  // Define scales for x and y axes
+  const x = d3.scaleLinear()
+ .domain([0, d3.max(data, function(d) { return d.x })+1000])
+ .range([0, width])
+
+  const y = d3.scaleLinear()
+ .domain([0, d3.max(data, function(d) { return d.y })+30])
+ .range([height, 0])
+
+  // Create x and y axes
+  const xAxis = d3.axisBottom(x)
+  const yAxis = d3.axisLeft(y)
+
+   // Add the axes to the plot (including lables)
+ svg.append("g")
+  .attr("transform", "translate(0," + height + ")")
+  .call(xAxis)
+  .append("text")
+  .attr("fill", "#000")
+  .attr("x", width - 10)
+  .attr("y", -10)
+  .style("text-anchor", "end")
+  .text("Number of Reviews")
+
+svg.append("g")
+  .call(yAxis)
+  .append("text")
+  .attr("fill", "#000")
+  .attr("transform", "rotate(-90)")
+  .attr("x", -10)
+  .attr("y", 10)
+  .style("text-anchor", "end")
+  .text("Average Playtime")
+
+  //Colors depending on Highlights
+  if (!(clusterHighlight[0])&&!(clusterHighlight[1])&&!(clusterHighlight[2])&&!(clusterHighlight[3])){
+    color_cluster1 = "blue"
+    color_cluster2 = "orange"
+    color_cluster3 = "cyan"
+    color_cluster4 = "green"
+  } else {
+    color_cluster1 = "#e4ddd2"
+    color_cluster2 = "#e4ddd2"
+    color_cluster3 = "#e4ddd2"
+    color_cluster4 = "#e4ddd2"
+
+    if (clusterHighlight[0]){color_cluster1 = "blue"}
+    if (clusterHighlight[1]){color_cluster2 = "orange"}
+    if (clusterHighlight[2]){color_cluster3 = "cyan"}
+    if (clusterHighlight[3]){color_cluster4 = "green"}
+  }
+
+  // Color scale: give me a specie name, I return a color
+  var color = d3.scaleOrdinal()
+    .domain([1,2,3,4,99])
+    .range([ color_cluster1, color_cluster2, color_cluster3, color_cluster4, "red"])
+
+ // Add data points to the plot
+ svg.selectAll("circle")
+     .data(data)
+     .enter().append("circle")
+     .attr("r", 3)
+     .attr("cx", function(d) { return x(d.x) })
+     .attr("cy", function(d) { return y(d.y) })
+     .style("fill", function (d) { return color(d.cluster) } )
+
+     //Add title
+    svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", -40)
+    .attr("text-anchor", "middle")
+    .style("font-size", "24px")
+    .style("font-weight", "bold")
+    .text("Relationship between number of reviews and average playtime.")
+
+}
