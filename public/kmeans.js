@@ -20,16 +20,12 @@ function mean(datapoints) {
  * @returns {Number} - the distance of point1 and point2
  */
 function euclid(point1, point2) {
-  
-//console.log("Point 1: X: "+ point1.x+" Y: "+ point1.y)
-//console.log("Point 2: X: "+ point2.x+" Y: "+ point2.y)
 
 const deltaX = point1.x - point2.x
 const deltaY = point1.y - point2.y
 
 const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2)
 
-  //console.log(distance)
   return distance
 }
 
@@ -41,6 +37,7 @@ const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2)
  */
 function assign_datapoints_to_centroids(datapoints,  centroids) {
   for (i=0;i<datapoints.length;i++){
+    if (datapoints[i].cluster != 90){
     //the array contains the distance between the point i and each centroid
     let dist = []
     for (j=0;j<centroids.length;j++){
@@ -59,6 +56,7 @@ function assign_datapoints_to_centroids(datapoints,  centroids) {
         point_dist = dist[j]
       }
     }
+  }
   }
 }
 
@@ -83,8 +81,20 @@ function calculate_new_centroids(datapoints, centroids) {
         count ++
       }
     }
+    if (count > 1){
     avg_x = avg_x/count
     avg_y = avg_y/count
+    } else {
+      x_max = d3.max(datapoints, function(d) { return d.x })
+      x_min = d3.min(datapoints, function(d) { return d.x })
+      y_max = d3.max(datapoints, function(d) { return d.y })
+      y_min = d3.min(datapoints, function(d) { return d.y }) 
+      x_random = Math.random() * (x_max - x_min) + x_min;
+      y_random = Math.random() * (y_max - y_min) + y_min;
+
+      avg_x = x_random
+      avg_y = y_random
+    }
 
     if (centroids[i].x != avg_x || centroids[i].y != avg_y){
 
@@ -93,6 +103,9 @@ function calculate_new_centroids(datapoints, centroids) {
       centroids_changed = true
     }
   }
+
+  centroids.sort((a,b) => a.x - b.x)
+
   return centroids_changed
 }
 
@@ -127,19 +140,135 @@ function get_random_centroids(datapoints, k) {
   return centroids
 }
 
+function prePocessData (datapoints){
+
+  excludeOutliers (datapoints, 3)
+
+  x_max = d3.max(datapoints, function(d) { return d.x })
+  y_max = d3.max(datapoints, function(d) { return d.y })
+  let normalized = []
+  for (i=0;i<datapoints.length;i++){
+    normalized.push({x: datapoints[i].x/x_max, y: datapoints[i].y/y_max, cluster: datapoints[i].cluster})
+  }
+  return normalized
+}
+
+function denormalize (datapoints, normalized, centroids){
+  x_max = d3.max(datapoints, function(d) { return d.x })
+  y_max = d3.max(datapoints, function(d) { return d.y })
+
+  for (i=0;i<datapoints.length;i++){
+    if (normalized[i].cluster != 90){
+    datapoints[i].cluster = normalized[i].cluster
+  } else {
+    datapoints[i].cluster = centroids.length;
+    let minDist = Infinity
+    for (a=centroids.length-1;a>=0;a--){
+      console.log(normalized[i].x + " "+ normalized[i].y)
+      console.log("Entfernung zu: "+(a+1)+" "+euclid(normalized[i], centroids[a]))
+      if (euclid(normalized[i], centroids[a]) < minDist) {
+        minDist = euclid(normalized[i], centroids[a])
+        datapoints[i].cluster = a+1;
+      }
+    }
+    console.log(datapoints[i].x + " "+ datapoints[i].y + " "+datapoints[i].cluster)
+  }
+}
+
+for (i=0;i<centroids.length;i++){
+  centroids[i].x = centroids[i].x * x_max
+  centroids[i].y = centroids[i].y * y_max
+}
+
+}
+
+function excludeOutliers (datapoints, threshold) {
+  // Calculate the mean and standard deviation of the data
+  const xValues = datapoints.map((point) => point.x);
+  const yValues = datapoints.map((point) => point.y);
+  const meanX = xValues.reduce((a, b) => a + b, 0) / xValues.length;
+  const meanY = yValues.reduce((a, b) => a + b, 0) / yValues.length;
+  const stdDevX = Math.sqrt(
+    xValues.reduce((sum, value) => sum + (value - meanX) ** 2, 0) / xValues.length
+  );
+  const stdDevY = Math.sqrt(
+    yValues.reduce((sum, value) => sum + (value - meanY) ** 2, 0) / yValues.length
+  );
+
+  // Define a function to check if a value is an outlier based on the z-score
+  const isOutlier = (point) =>
+    Math.abs((point.x - meanX) / stdDevX) > threshold ||
+    Math.abs((point.y - meanY) / stdDevY) > threshold;
+
+    // Mark the outliers with the specified cluster value
+    datapoints.forEach((point) => {
+      if (isOutlier(point)) {
+        point.cluster = 90;
+      }
+    });
+}
+
+function calculate_wcss(datapoints, centroids) {
+  let wcss = 0;
+
+  for (i=0;i<datapoints.length;i++) {
+    if (datapoints[i].cluster != 90){
+    point = datapoints[i];
+    centroid = centroids[point.cluster - 1];
+    distance = euclid(point, centroid);
+    wcss += distance ** 2;
+  }
+}
+
+  return wcss;
+}
+
+
 function kmeans (datapoints, k) {
+  normalizedData = prePocessData(datapoints);
   //first random centroids
-  centroids = get_random_centroids(datapoints, k)
-  console.log(centroids)
-  assign_datapoints_to_centroids(datapoints, centroids)
+  centroids = get_random_centroids(normalizedData, k)
+  assign_datapoints_to_centroids(normalizedData, centroids)
   
   iteration_count = 0;
-  while (calculate_new_centroids (datapoints, centroids) && iteration_count <= 2000){
-    assign_datapoints_to_centroids(datapoints, centroids)
+  while (calculate_new_centroids (normalizedData, centroids) && iteration_count <= 2000){
+    assign_datapoints_to_centroids(normalizedData, centroids)
     iteration_count++
   } 
+  denormalize(datapoints, normalizedData, centroids)
   for (i=0;i<centroids.length;i++){
     datapoints.push({x: centroids[i].x, y: centroids[i].y, cluster: 99})
   }
-  console.log(datapoints)
+}
+
+function elbow (datapoints){
+  let wcss = []
+
+  for (k=1;k<=8;k++){
+    copy_data = datapoints
+    
+    normalizedData = prePocessData(copy_data);
+    //first random centroids
+    centroids = get_random_centroids(normalizedData, k)
+    assign_datapoints_to_centroids(normalizedData, centroids)
+  
+    iteration_count = 0;
+    while (calculate_new_centroids (normalizedData, centroids) && iteration_count <= 2000){
+      assign_datapoints_to_centroids(normalizedData, centroids)
+     iteration_count++
+   } 
+   wcss.push(calculate_wcss (normalizedData, centroids))
+  }
+  optimalK = 1
+  for (i=2;i<9;i++){
+    console.log("WCSS "+ (i)+": "+ wcss[i-1])
+    let currentGradient = Math.atan(Math.abs((wcss[i - 1] - wcss[i - 2]) / (i - 1)))* (180 / Math.PI);
+    console.log(currentGradient)
+    if (currentGradient < 20){
+      optimalK = i;
+      console.log((i)+ " Cluster")
+      i = 20
+    }
+  }
+  return optimalK;
 }

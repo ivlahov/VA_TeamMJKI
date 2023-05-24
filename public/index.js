@@ -119,7 +119,6 @@ document.getElementById("cluster4").addEventListener("change", (event) => {
   * @param {Array} data     Dataset of the 40 board games
 */
 function createVis(vis, data) {
-  console.log(data)
   if (vis === "vis_1_designer") {
     createVis_1(data)
   } else if (vis === "vis_2_minage_minplaytime") {
@@ -646,7 +645,7 @@ function createVis_4(data) {
   }
   console.log(vis4_data);
 
-  kmeans(vis4_data, 4);
+  kmeans(vis4_data, elbow(vis4_data));
 
   kmeanData = vis4_data;
   clusterHighlight = [false, false, false, false]
@@ -689,7 +688,7 @@ function createVis_4(data) {
 
   // Color scale: give me a specie name, I return a color
   var color = d3.scaleOrdinal()
-    .domain([1, 2, 3, 4, 5, 99])
+    .domain([1, 2, 3, 4, 90, 99])
     .range(["blue", "orange", "cyan", "green", "pink", "red"])
 
   // Add data points to the plot
@@ -770,8 +769,8 @@ function highlightVis_4(data, clusterHighlight) {
 
   // Color scale: give me a specie name, I return a color
   var color = d3.scaleOrdinal()
-    .domain([1, 2, 3, 4, 99])
-    .range([color_cluster1, color_cluster2, color_cluster3, color_cluster4, "red"])
+    .domain([1, 2, 3, 4, 90, 99])
+    .range([color_cluster1, color_cluster2, color_cluster3, color_cluster4, "pink", "red"])
 
   // Add data points to the plot
   svg.selectAll("circle")
