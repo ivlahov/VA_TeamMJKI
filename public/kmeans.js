@@ -1,23 +1,11 @@
 /* k-means implementation in 2D */
 
 /**
- * Calculates the mean for x and y of the given data points.
- *
- * @param {[{ x, y, centroid_index }, ...]} datapoints - given data points to calculate measure on, whereas the array contains the data points; centroid_index is not needed here, but is part of the default data structure
- * @returns {{x, y}} - the measure (here: mean)
- */
-function mean(datapoints) {
-  // TODO
-  return { x: 0, y: 0 }
-}
-
-
-/**
  * Calculates the euclidian distance between two points in space.
  *
- * @param {{ x, y, centroid_index }} point1 - first point in space
- * @param {{ x, y, centroid_index }} point2 - second point in space
- * @returns {Number} - the distance of point1 and point2
+ * @param {{ x, y }} point1 - first point in space
+ * @param {{ x, y}} point2 - second point in space
+ * @returns {distance} - the distance of point1 and point2
  */
 function euclid(point1, point2) {
 
@@ -32,8 +20,8 @@ const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2)
 /**
  * Assigns each data point according to the given distance function to the nearest centroid.
  *
- * @param {[{ x, y, centroid_index }, ...]} datapoints - all available data points
- * @param {[{ x, y }, ... ]} centroids - current centroids
+ * @param {[{ x, y, cluster }]} datapoints - all available data points
+ * @param {[{ x, y } ]} centroids - current centroids
  */
 function assign_datapoints_to_centroids(datapoints,  centroids) {
   for (i=0;i<datapoints.length;i++){
@@ -63,9 +51,9 @@ function assign_datapoints_to_centroids(datapoints,  centroids) {
 /**
  * Calculates for each centroid it's new position according to the given measure.
  *
- * @param {[{ x, y, centroid_index }, ...]} datapoints - all available data points
- * @param {[{ x, y }, ... ]} centroids - current centroids
- * @returns {{[{ x, y }, ... ], Boolean}} - centroids with new positions, and true of at least one centroid position changed
+ * @param {[{ x, y, cluster }]} datapoints - all available data points
+ * @param {[{ x, y } ]} centroids - current centroids
+ * @returns {centroids_changed}  - boolean of at least one centroid position changed
  */
 function calculate_new_centroids(datapoints, centroids) {
   let centroids_changed = false
@@ -84,6 +72,7 @@ function calculate_new_centroids(datapoints, centroids) {
     if (count > 1){
     avg_x = avg_x/count
     avg_y = avg_y/count
+    //If there is no point assigned we calculate the centroid new
     } else {
       x_max = d3.max(datapoints, function(d) { return d.x })
       x_min = d3.min(datapoints, function(d) { return d.x })
@@ -112,9 +101,9 @@ function calculate_new_centroids(datapoints, centroids) {
 /**
  * Generates random centroids according to the data point boundaries and the specified k.
  *
- * @param {[{ x, y }, ...]} datapoints - all available data points
+ * @param {[{ x, y, cluster}]} datapoints - all available data points
  * @param {Number} k - number of centroids to be generated as a Number
- * @returns {[{ x, y }, ...]} - generated centroids
+ * @returns {[{ x, y  }]} - generated centroids
  */
 function get_random_centroids(datapoints, k) {
   let centroids = []
@@ -139,11 +128,17 @@ function get_random_centroids(datapoints, k) {
 
   return centroids
 }
-
+/**
+ * Exclude Outliers and then normalises the datapoints
+ *
+ * @param {[{ x, y, cluster}]} datapoints - all available data points
+ * @returns {[{ x, y, cluster  }]} - normalised data with outliers marked as cluster 90
+ */
 function prePocessData (datapoints){
 
   excludeOutliers (datapoints, 3)
 
+  //normalise the data between 0 and 1
   x_max = d3.max(datapoints, function(d) { return d.x })
   y_max = d3.max(datapoints, function(d) { return d.y })
   let normalized = []
@@ -153,6 +148,13 @@ function prePocessData (datapoints){
   return normalized
 }
 
+/**
+ * Denormalizes the data, so we can plot it as scatterplot
+ *
+ * @param {[{ x, y, cluster}]} datapoints - all available data points
+ * @param {[{ x, y, cluster}]} normalised - all available data points in normalised form
+ * @param {[{ x, y}]} centroids - all available centroids
+ */
 function denormalize (datapoints, normalized, centroids){
   x_max = d3.max(datapoints, function(d) { return d.x })
   y_max = d3.max(datapoints, function(d) { return d.y })
@@ -182,6 +184,12 @@ for (i=0;i<centroids.length;i++){
 
 }
 
+/**
+ * Assigns all Outliers to Cluster 90
+ *
+ * @param {[{ x, y, cluster}]} datapoints - all available data points
+ * @param {Number} threshold - Amount of standard deviations a point is allowed to be away to not be an outlier
+ */
 function excludeOutliers (datapoints, threshold) {
   // Calculate the mean and standard deviation of the data
   const xValues = datapoints.map((point) => point.x);
@@ -200,7 +208,7 @@ function excludeOutliers (datapoints, threshold) {
     Math.abs((point.x - meanX) / stdDevX) > threshold ||
     Math.abs((point.y - meanY) / stdDevY) > threshold;
 
-    // Mark the outliers with the specified cluster value
+    // Mark the outliers with cluster 90
     datapoints.forEach((point) => {
       if (isOutlier(point)) {
         point.cluster = 90;
@@ -208,6 +216,13 @@ function excludeOutliers (datapoints, threshold) {
     });
 }
 
+/**
+ * Calculate the wcss for the elbow method
+ *
+ * @param {[{ x, y, cluster}]} datapoints - all available data points, preferred in normalised form
+ * @param {[{ x, y}]} centroids - all available centroids
+ * @returns {wcss}  - number of calculated Within-Cluster Sum of Squares
+ */
 function calculate_wcss(datapoints, centroids) {
   let wcss = 0;
 
@@ -223,8 +238,14 @@ function calculate_wcss(datapoints, centroids) {
   return wcss;
 }
 
-
+/**
+ * Calls the kmean algorithm
+ *
+ * @param {[{ x, y, cluster}]} datapoints - all available data points
+ * @param {Number} k - number of clusters
+ */
 function kmeans (datapoints, k) {
+  //normalise data and exclude outliers
   normalizedData = prePocessData(datapoints);
   //first random centroids
   centroids = get_random_centroids(normalizedData, k)
@@ -240,10 +261,16 @@ function kmeans (datapoints, k) {
     datapoints.push({x: centroids[i].x, y: centroids[i].y, cluster: 99})
   }
 }
-
+/**
+ * Callsthe elbow method
+ *
+ * @param {[{ x, y, cluster}]} datapoints - all available data points
+ * @returns {optimalK}  - number of optimal clusters
+ */
 function elbow (datapoints){
   let wcss = []
 
+  //calculate the wcss for maximum 8 clusters
   for (k=1;k<=8;k++){
     copy_data = datapoints
     
@@ -259,6 +286,8 @@ function elbow (datapoints){
    } 
    wcss.push(calculate_wcss (normalizedData, centroids))
   }
+
+  //if the fall is is less 20 Gradient we found the optimal clusters
   optimalK = 1
   for (i=2;i<9;i++){
     console.log("WCSS "+ (i)+": "+ wcss[i-1])
