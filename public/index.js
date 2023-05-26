@@ -335,7 +335,7 @@ function createVis_3(data) {
 
   //Data stuff
   //remove Outlier
-  // obj.splice(78, 1)
+  obj.splice(78, 1)
 
   //Create list of feature ids
   var categoryIds = []
@@ -406,9 +406,9 @@ function createVis_3(data) {
       let numbers = []
 
       numbers.push(element.minplayers)
-      // numbers.push(element.minplaytime)
+      numbers.push(element.minplaytime)
       numbers.push(element.maxplayers)
-      // numbers.push(element.maxplaytime)
+      numbers.push(element.maxplaytime)
       numbers.push(element.rating.rating)
       numbers.push(element.rating.num_of_reviews)
       numbers.push(element.minage)
