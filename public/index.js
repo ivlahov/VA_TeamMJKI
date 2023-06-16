@@ -33,6 +33,7 @@ socket.on("disconnect", () => {
 socket.on("init", (visData) => {
   vis = visData.vis
   data = visData.data
+  console.log(data)
   createVis(vis, data)
 })
 
@@ -41,6 +42,7 @@ socket.on("switch-vis", (visData) => {
   console.log("Switch to " + vis)
   vis = visData.vis
   data = visData.data
+  console.log(data)
   createVis(vis, data)
 })
 
