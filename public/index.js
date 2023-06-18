@@ -17,6 +17,7 @@ const svg = d3.select("#svgRoot")
 
 let vis = null
 let data = null
+var filters = []
 let kmeanData = null
 let clusterHighlight = [false, false, false, false]
 
@@ -39,11 +40,16 @@ socket.on("init", (visData) => {
 
 //After pressing one button the vis get created new
 socket.on("switch-vis", (visData) => {
-  console.log("Switch to " + vis)
+  console.log("Switch from " + vis)
   vis = visData.vis
   data = visData.data
   console.log(data)
   createVis(vis, data)
+})
+
+socket.on("filterUpdate", (newFilter) => {
+  console.log(newFilter)
+  filters = newFilter
 })
 
 // Button Handler
@@ -77,6 +83,13 @@ document.getElementById("id_vis_4_kmeans").addEventListener("click", () => {
   document.getElementById("cluster4").checked = false;
   document.getElementById("divCheckbox").style.display = "flex"
   console.log("Vis 4")
+})
+
+document.getElementById("id_vis_6_significance").addEventListener("click", () => {
+  removeVis_3()
+  socket.emit("vis_6_significance")
+  document.getElementById("divCheckbox").style.display = "none"
+  console.log("Vis 6")
 })
 
 document.getElementById("cluster1").addEventListener("change", (event) => {
@@ -121,6 +134,19 @@ document.getElementById("cluster4").addEventListener("change", (event) => {
   * @param {Array} data     Dataset of the 40 board games
 */
 function createVis(vis, data) {
+
+  //Filters out games according to filters in vis_6
+  if(vis !== "vis_6_significance") {
+    data = data.filter(game => {
+      if (filters.findIndex(id => id === game.id) === -1) {
+        return true
+      } else {
+        return false
+      }
+    })
+  }
+  
+
   if (vis === "vis_1_designer") {
     createVis_1(data)
   } else if (vis === "vis_2_minage_minplaytime") {
@@ -129,6 +155,8 @@ function createVis(vis, data) {
     createVis_3(data)
   } else if (vis === "vis_4_kmeans") {
     createVis_4(data)
+  } else if(vis === "vis_6_significance") {
+    createVis_6(data)
   }
 
 }
@@ -138,7 +166,6 @@ function createVis(vis, data) {
   * @param {Array} data     Dataset of the 40 board games
 */
 function createVis_1(data) {
-
   //Clear the data, we only need the name and amount for vis 1
   let vis1_data = []
 
@@ -370,7 +397,7 @@ function createVis_3(data) {
     .attr("transform", "translate(" + legendW + "," + 0 + ")")
 
   legendArea.append("text")
-    .attr("y",-40)
+    .attr("y", -40)
     .attr("text-anchor", "start")
     .style("font-size", "24px")
     .style("font-weight", "bold")
@@ -537,7 +564,7 @@ function createVis_3(data) {
           return "cyan"
         }
       })
-      .attr("stroke","black")
+      .attr("stroke", "black")
 
     //Create dropdowns
     if (init) {
@@ -792,4 +819,12 @@ function highlightVis_4(data, clusterHighlight) {
     .style("font-weight", "bold")
     .text("Relationship between number of reviews and average playtime.")
 
+}
+
+function createVis_6 (data) {
+
+  data.sort((a,b) => b.significance - a.significance)
+  console.log(data)
+
+  svg.selectAll("*").remove()
 }

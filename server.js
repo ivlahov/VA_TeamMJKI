@@ -93,11 +93,23 @@ io.sockets.on("connection", (socket) => {
     })
   })
 
+  socket.on("vis_6_significance", () => {
+    socket.emit("switch-vis", {
+      vis: "vis_6_significance",
+      data: vis_data,
+    })
+  })
+
   /*
   * Issues for switching the visulatisations:
   *   The code does not recognize which visualization is already shown, 
   *     so the code "Switch" although it stay at the same visualization
   */
+
+  socket.on("updateFilters", (newFilters) => {
+    console.log(newFilters)
+    socket.emit("filterUpdate", newFilters)
+  })
 
   //socket.on("get_example_data", get_example_data)
 })
@@ -107,21 +119,21 @@ io.sockets.on("connection", (socket) => {
  * pagerank significance store for every board game in the dataset.
  */
 function createGraph() {
-  vis_data.forEach((game,gameIndex) => {
+  vis_data.forEach((game, gameIndex) => {
     game.recommendations.fans_liked.forEach(rec => {
-      graph.link(gameIndex,getArrayIndexFromID(rec),1.0)
+      graph.link(gameIndex, getArrayIndexFromID(rec), 1.0)
     })
   })
 
-  let sig_data = vis_data.map(e=> {
-    let {credit, id, maxplayers, minplayers, minage, maxplaytime, minplaytime, rank, rating, recommendations, title, types, year} = e
+  let sig_data = vis_data.map(e => {
+    let { credit, id, maxplayers, minplayers, minage, maxplaytime, minplaytime, rank, rating, recommendations, title, types, year } = e
     significance = 0
-    return {credit, id ,maxplayers,maxplaytime,minage,minplayers,minplaytime,rank,recommendations,rating,title,types,year,significance}
+    return { credit, id, maxplayers, maxplaytime, minage, minplayers, minplaytime, rank, recommendations, rating, title, types, year, significance }
   })
 
   graph.rank(0.85, 0.000001, function (node, rank) {
-      // console.log("Node " + node + " has a rank of " + rank);
-        sig_data[node].significance = rank
+    // console.log("Node " + node + " has a rank of " + rank);
+    sig_data[node].significance = rank
   });
 
   vis_data = sig_data
@@ -132,7 +144,7 @@ function createGraph() {
  * @param {Number} id board game id
  * @returns 
  */
-function getArrayIndexFromID (id) {
+function getArrayIndexFromID(id) {
   return vis_data.findIndex(element => element.id === id)
 }
 
@@ -140,17 +152,17 @@ function getArrayIndexFromID (id) {
  * Removes all recommendations to game outside the data set
  * @returns the modified array
  */
-function removeDeadEnds () {
+function removeDeadEnds() {
   vis_data.forEach(game => {
     let removeIDs = []
-    game.recommendations.fans_liked.forEach((rec,index) => {
-      if(vis_data.findIndex(element => element.id === rec) === -1){
+    game.recommendations.fans_liked.forEach((rec, index) => {
+      if (vis_data.findIndex(element => element.id === rec) === -1) {
         removeIDs.push(index)
       }
     })
-    removeIDs.sort((a,b) => b-a)
+    removeIDs.sort((a, b) => b - a)
     removeIDs.forEach(index => {
-      game.recommendations.fans_liked.splice(index,1)
+      game.recommendations.fans_liked.splice(index, 1)
     })
   })
 
