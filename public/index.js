@@ -136,7 +136,7 @@ document.getElementById("cluster4").addEventListener("change", (event) => {
 function createVis(vis, data) {
 
   //Filters out games according to filters in vis_6
-  if(vis !== "vis_6_significance") {
+  if (vis !== "vis_6_significance") {
     data = data.filter(game => {
       if (filters.findIndex(id => id === game.id) === -1) {
         return true
@@ -145,7 +145,7 @@ function createVis(vis, data) {
       }
     })
   }
-  
+
 
   if (vis === "vis_1_designer") {
     createVis_1(data)
@@ -155,7 +155,7 @@ function createVis(vis, data) {
     createVis_3(data)
   } else if (vis === "vis_4_kmeans") {
     createVis_4(data)
-  } else if(vis === "vis_6_significance") {
+  } else if (vis === "vis_6_significance") {
     createVis_6(data)
   }
 
@@ -821,10 +821,106 @@ function highlightVis_4(data, clusterHighlight) {
 
 }
 
-function createVis_6 (data) {
+function createVis_6(data) {
 
-  data.sort((a,b) => b.significance - a.significance)
+  data.sort((a, b) => b.significance - a.significance)
   console.log(data)
 
+  //Normalize significance
+  data.forEach(game => {
+    game.normSig = ( game.significance - data[0].significance) / (data[0].significance - data[data.length -1].significance) 
+  })
+
+  var links = []
+  data.forEach(d => {
+    d.recommendations.fans_liked.forEach(rec => {
+      links.push({ source: d.id, target: rec, value: 1 })
+    })
+  })
+
+  var nodes = []
+  data.forEach(d => {
+    nodes.push({ id: d.id, group: 1 , value: (d.normSig + 2) * 7})
+  })
+
+  console.log(links)
+  console.log(nodes)
+
   svg.selectAll("*").remove()
+
+  var smaller = 0
+  if(width > height) {
+    smaller = height
+  } else {
+    smaller = width
+  }
+
+  const simulation = d3.forceSimulation()
+    .force("link", d3.forceLink().id(function(d) { return d.id; }))
+    .force("charge", d3.forceManyBody()
+      .strength(-150)
+      .theta(0.8)
+      .distanceMax(smaller / 1.6)
+
+    )
+    .force("center", d3.forceCenter(width / 2 + margin.left, height / 2 ))
+    .force('collision', d3.forceCollide().radius(function(d) {
+      return d.radius
+    }))
+
+  const link = svg.append("g")
+    .attr("stroke", "#999")
+    // .attr("#stroke-opacity", 0.6)
+    .selectAll("line")
+    .data(links)
+    .enter().append("line")
+    .attr("stroke-width", d => Math.sqrt(d.value))
+
+  const node = svg.append("g")
+    .attr("stroke", "#fff")
+    .attr("stroke-width", 1.5)
+    .selectAll("circle")
+    .data(nodes)
+    .enter().append("circle")
+    .attr("r", d => d.value)
+
+  var label = svg.append("g")
+  .attr("class", "labels")
+  .selectAll("text")
+  .data(nodes)
+  .enter().append("text")
+  .text(function(d) { return d.name; })
+  .attr("class", "label")
+
+label
+  .style("text-anchor", "middle")
+  .style("font-size", "10px");
+
+  // node.call(d3.drag()
+  //   .on("start", dragstarted)
+  //   .on("drag", dragged)
+  //   .on("end", dragended));
+
+  function ticked() {
+    link
+      .attr("x1", function (d) { return d.source.x; })
+      .attr("y1", function (d) { return d.source.y; })
+      .attr("x2", function (d) { return d.target.x; })
+      .attr("y2", function (d) { return d.target.y; });
+
+    node
+      .attr("cx", function (d) { return d.x + 5; })
+      .attr("cy", function (d) { return d.y - 3; });
+
+    label
+      .attr("x", function (d) { return d.x; })
+      .attr("y", function (d) { return d.y; });
+  }
+
+  // invalidation.then(() => simulation.stop());
+  simulation
+    .nodes(nodes)
+    .on("tick",ticked)
+
+  simulation.force("link").links(links)
 }
