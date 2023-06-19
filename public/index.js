@@ -47,6 +47,7 @@ socket.on("switch-vis", (visData) => {
   createVis(vis, data)
 })
 
+//Receiving the updated filters array
 socket.on("filterUpdate", (newFilter) => {
   console.log(newFilter)
   filters = newFilter
@@ -134,7 +135,7 @@ document.getElementById("cluster4").addEventListener("change", (event) => {
   * @param {Array} data     Dataset of the 40 board games
 */
 function createVis(vis, data) {
-
+  // console.log(filters)
   //Filters out games according to filters in vis_6
   if (vis !== "vis_6_significance") {
     data = data.filter(game => {
@@ -823,12 +824,13 @@ function highlightVis_4(data, clusterHighlight) {
 
 function createVis_6(data) {
 
+  //Sort by significance score
   data.sort((a, b) => b.significance - a.significance)
-  console.log(data)
+  // console.log(data)
 
   //Normalize significance
   data.forEach(game => {
-    game.normSig = ( game.significance - data[0].significance) / (data[0].significance - data[data.length -1].significance) 
+    game.normSig = (game.significance - data[0].significance) / (data[0].significance - data[data.length - 1].significance)
   })
 
   var links = []
@@ -840,31 +842,35 @@ function createVis_6(data) {
 
   var nodes = []
   data.forEach(d => {
-    nodes.push({ id: d.id, group: 1 , value: (d.normSig + 2) * 7})
+    let color = "blue"
+    if (filters.includes(d.id)) {
+      color = "red"
+    }
+    nodes.push({ id: d.id, group: 1, value: (d.normSig + 2) * 7, color: color })
   })
 
-  console.log(links)
-  console.log(nodes)
+  // console.log(links)
+  // console.log(nodes)
 
   svg.selectAll("*").remove()
 
   var smaller = 0
-  if(width > height) {
+  if (width > height) {
     smaller = height
   } else {
     smaller = width
   }
 
   const simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(function(d) { return d.id; }))
+    .force("link", d3.forceLink().id(function (d) { return d.id; }))
     .force("charge", d3.forceManyBody()
       .strength(-150)
       .theta(0.8)
       .distanceMax(smaller / 1.6)
 
     )
-    .force("center", d3.forceCenter(width / 2 + margin.left, height / 2 ))
-    .force('collision', d3.forceCollide().radius(function(d) {
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(function (d) {
       return d.radius
     }))
 
@@ -883,23 +889,40 @@ function createVis_6(data) {
     .data(nodes)
     .enter().append("circle")
     .attr("r", d => d.value)
+    .attr("fill", function (d) { return d.color })
+    .on("click", function (e, d) {
+      if (d.color === "blue") {
+        let filterCopy = filters
+        filterCopy.push(d.id)
+        socket.emit("filterUpdate", filterCopy)
+        // console.log("ADD " + d.id)
+        d.color = "red"
+      } else {
+        let filterCopy = filters
+        filterCopy.splice(filterCopy.findIndex(element => element === d.id), 1)
+        socket.emit("filterUpdate", filterCopy)
+        // console.log("REMOVE" + d.id)
+        d.color = "blue"
+      }
+      update()
+    })
 
   var label = svg.append("g")
-  .attr("class", "labels")
-  .selectAll("text")
-  .data(nodes)
-  .enter().append("text")
-  .text(function(d) { return d.name; })
-  .attr("class", "label")
+    .attr("class", "labels")
+    .selectAll("text")
+    .data(nodes)
+    .enter().append("text")
+    .text(function (d) { return d.name; })
+    .attr("class", "label")
 
-label
-  .style("text-anchor", "middle")
-  .style("font-size", "10px");
+  label
+    .style("text-anchor", "middle")
+    .style("font-size", "900px");
 
-  // node.call(d3.drag()
-  //   .on("start", dragstarted)
-  //   .on("drag", dragged)
-  //   .on("end", dragended));
+  node.call(d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended));
 
   function ticked() {
     link
@@ -917,10 +940,56 @@ label
       .attr("y", function (d) { return d.y; });
   }
 
+  //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
+  // Reheat the simulation when drag starts, and fix the subject position.
+  function dragstarted(event) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    event.subject.fx = event.subject.x;
+    event.subject.fy = event.subject.y;
+  }
+  //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
+  // Update the subject (dragged node) position during drag.
+  function dragged(event) {
+    event.subject.fx = event.x;
+    event.subject.fy = event.y;
+  }
+  //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
+  // Restore the target alpha so the simulation cools after dragging ends.
+  // Unfix the subject position now that it’s no longer being dragged.
+  function dragended(event) {
+    if (!event.active) simulation.alphaTarget(0);
+    event.subject.fx = null;
+    event.subject.fy = null;
+  }
+
+  function update() {
+    node.data(nodes)
+
+    svg.selectAll("circle")
+      .attr("fill", function (d) { return d.color })
+  }
+
   // invalidation.then(() => simulation.stop());
   simulation
     .nodes(nodes)
-    .on("tick",ticked)
+    .on("tick", ticked)
 
   simulation.force("link").links(links)
+
+  var legendW = (width - (margin.right) * 3)
+
+  var legendArea = svg.append("g")
+    .attr("transform", "translate(" + legendW + "," + 0 + ")")
+
+  legendArea.append("text")
+    .attr("y", -40)
+    .attr("text-anchor", "start")
+    .style("font-size", "24px")
+    .style("font-weight", "bold")
+    .text("Legend of Color Mappings")
+
+  legendArea.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 6).style("fill", "blue")
+  legendArea.append("circle").attr("cx", 0).attr("cy", 30).attr("r", 6).style("fill", "red")
+  legendArea.append("text").attr("x", 20).attr("y", 3).text("Considered for analysis tasks")
+  legendArea.append("text").attr("x", 20).attr("y", 33).text("Not considered for analysis tasks")
 }
