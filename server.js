@@ -85,13 +85,21 @@ io.sockets.on("connection", (socket) => {
     })
   })
 
-  //After pressing the second button the bar chat will be created new
+  //After pressing the fourth button the bar chat will be created new
   socket.on("vis_4_kmeans", () => {
     socket.emit("switch-vis", {
       vis: "vis_4_kmeans",
       data: vis_data,
     })
   })
+
+    //After pressing the fifth button the bar chat will be created new
+    socket.on("vis_5_compare", () => {
+      socket.emit("switch-vis", {
+        vis: "vis_5_compare",
+        data: vis_data,
+      })
+    })
 
   /*
   * Issues for switching the visulatisations:

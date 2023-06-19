@@ -20,45 +20,42 @@
         src="visva_sitelogo_no_white.png"
       />
       <div class="buttons">
-        <button class="function_button" id="id_vis_1_designer">
-          Designer
-        </button>
+        <button class="function_button" id="id_vis_1_designer">Designer</button>
 
         <button class="function_button" id="id_vis_2_minage_minplaytime">
           Age/Playtime
         </button>
-        <button class="function_button" id="id_vis_3_lda">
-          LDA
-        </button>
-        <button class="function_button" id="id_vis_4_kmeans">
-          K-Means
+        <button class="function_button" id="id_vis_3_lda">LDA</button>
+        <button class="function_button" id="id_vis_4_kmeans">K-Means</button>
+        <button class="function_button" id="id_vis_5_compare">
+          Compare Games
         </button>
       </div>
     </div>
     <div class="content">
-      <svg id="svgRoot">
-      </svg>
+      <svg id="svgRoot"></svg>
     </div>
     <div class="interactivity">
       <div class="hidden" id="divCheckbox">
-      <div class="checkContainer">
-      <input type="checkbox" id="cluster1">
-      <label for="cluster1">Highlight Cluster 1</label>
+        <div class="checkContainer">
+          <input type="checkbox" id="cluster1" />
+          <label for="cluster1">Highlight Cluster 1</label>
+        </div>
+        <div class="checkContainer">
+          <input type="checkbox" id="cluster2" />
+          <label for="cluster2">Highlight Cluster 2</label>
+        </div>
+        <div class="checkContainer">
+          <input type="checkbox" id="cluster3" />
+          <label for="cluster3">Highlight Cluster 3</label>
+        </div>
+        <div class="checkContainer">
+          <input type="checkbox" id="cluster4" />
+          <label for="cluster4">Highlight Cluster 4</label>
+        </div>
       </div>
-      <div class="checkContainer">
-      <input type="checkbox" id="cluster2">
-      <label for="cluster2">Highlight Cluster 2</label>
+      <select class="hidden_2" id="node_select"></select>
     </div>
-      <div class="checkContainer">
-      <input type="checkbox" id="cluster3">
-      <label for="cluster3">Highlight Cluster 3</label>
-    </div>
-      <div class="checkContainer">
-      <input type="checkbox" id="cluster4">
-      <label for="cluster4">Highlight Cluster 4</label>
-    </div>
-    </div>
-  </div>
     <script src="kmeans.js"></script>
     <script src="index.js"></script>
   </body>

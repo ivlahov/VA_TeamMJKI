@@ -75,6 +75,10 @@ body {
   border-color: white;
 }
 
+.hidden_2 {
+  display: none;
+}
+
 .hidden {
   display: none;
   flex-direction: column;
