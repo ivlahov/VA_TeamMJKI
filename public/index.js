@@ -841,12 +841,12 @@ function createVis_6(data) {
   })
 
   var nodes = []
-  data.forEach(d => {
+  data.forEach((d, index) => {
     let color = "blue"
     if (filters.includes(d.id)) {
       color = "red"
     }
-    nodes.push({ id: d.id, group: 1, value: (d.normSig + 2) * 7, color: color })
+    nodes.push({ id: d.id, group: 1, value: (d.normSig + 2) * 7, color: color, rank: d.rank, significance: d.significance, sigRank: index +1, title: d.title })
   })
 
   // console.log(links)
@@ -882,6 +882,8 @@ function createVis_6(data) {
     .enter().append("line")
     .attr("stroke-width", d => Math.sqrt(d.value))
 
+  var selectedNode = { title: "None", rank: 0, significance: 0, sigRank: 0 };
+
   const node = svg.append("g")
     .attr("stroke", "#fff")
     .attr("stroke-width", 1.5)
@@ -898,31 +900,21 @@ function createVis_6(data) {
         // console.log("ADD " + d.id)
         d.color = "red"
       } else {
+
         let filterCopy = filters
         filterCopy.splice(filterCopy.findIndex(element => element === d.id), 1)
         socket.emit("filterUpdate", filterCopy)
         // console.log("REMOVE" + d.id)
         d.color = "blue"
       }
+      selectedNode = d
       update()
     })
 
-  var label = svg.append("g")
-    .attr("class", "labels")
-    .selectAll("text")
-    .data(nodes)
-    .enter().append("text")
-    .text(function (d) { return d.name; })
-    .attr("class", "label")
-
-  label
-    .style("text-anchor", "middle")
-    .style("font-size", "900px");
-
-  node.call(d3.drag()
-    .on("start", dragstarted)
-    .on("drag", dragged)
-    .on("end", dragended));
+  // node.call(d3.drag()
+  //   .on("start", dragstarted)
+  //   .on("drag", dragged)
+  //   .on("end", dragended));
 
   function ticked() {
     link
@@ -934,42 +926,33 @@ function createVis_6(data) {
     node
       .attr("cx", function (d) { return d.x + 5; })
       .attr("cy", function (d) { return d.y - 3; });
-
-    label
-      .attr("x", function (d) { return d.x; })
-      .attr("y", function (d) { return d.y; });
   }
 
-  //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
-  // Reheat the simulation when drag starts, and fix the subject position.
-  function dragstarted(event) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
-    event.subject.fx = event.subject.x;
-    event.subject.fy = event.subject.y;
-  }
-  //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
-  // Update the subject (dragged node) position during drag.
-  function dragged(event) {
-    event.subject.fx = event.x;
-    event.subject.fy = event.y;
-  }
-  //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
-  // Restore the target alpha so the simulation cools after dragging ends.
-  // Unfix the subject position now that it’s no longer being dragged.
-  function dragended(event) {
-    if (!event.active) simulation.alphaTarget(0);
-    event.subject.fx = null;
-    event.subject.fy = null;
-  }
+  // //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
+  // // Reheat the simulation when drag starts, and fix the subject position.
+  // function dragstarted(event) {
+  //   if (!event.active) simulation.alphaTarget(0.3).restart();
+  //   event.subject.fx = event.subject.x;
+  //   event.subject.fy = event.subject.y;
+  // }
+  // //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
+  // // Update the subject (dragged node) position during drag.
+  // function dragged(event) {
+  //   event.subject.fx = event.x;
+  //   event.subject.fy = event.y;
+  // }
+  // //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
+  // // Restore the target alpha so the simulation cools after dragging ends.
+  // // Unfix the subject position now that it’s no longer being dragged.
+  // function dragended(event) {
+  //   if (!event.active) simulation.alphaTarget(0);
+  //   event.subject.fx = null;
+  //   event.subject.fy = null;
+  // }
 
-  function update() {
-    node.data(nodes)
-
-    svg.selectAll("circle")
-      .attr("fill", function (d) { return d.color })
-  }
 
   // invalidation.then(() => simulation.stop());
+
   simulation
     .nodes(nodes)
     .on("tick", ticked)
@@ -988,8 +971,47 @@ function createVis_6(data) {
     .style("font-weight", "bold")
     .text("Legend of Color Mappings")
 
-  legendArea.append("circle").attr("cx", 0).attr("cy", 0).attr("r", 6).style("fill", "blue")
-  legendArea.append("circle").attr("cx", 0).attr("cy", 30).attr("r", 6).style("fill", "red")
+  legendArea.append("rect").attr("transform", "translate(" + 0 + ", " + -7 + ")").attr("width", 9).attr("height", 9).style("fill", "blue")
+  legendArea.append("rect").attr("transform", "translate(" + 0 + ", " + 23 + ")").attr("width", 9).attr("height", 9).style("fill", "red")
   legendArea.append("text").attr("x", 20).attr("y", 3).text("Considered for analysis tasks")
   legendArea.append("text").attr("x", 20).attr("y", 33).text("Not considered for analysis tasks")
+
+
+  const selectedNodeArea = svg.append("g")
+    .attr("transform", "translate(" + legendW + ", " + 150 + ")")
+
+  selectedNodeArea.append("text")
+    .attr("y", -40)
+    .attr("text-anchor", "start")
+    .style("font-size", "24px")
+    .style("font-weight", "bold")
+    .text("Last clicked on board game")
+
+  selectedNodeArea.append("text").attr("x", 0).attr("y", -5).text("Title: " + selectedNode.title)
+  selectedNodeArea.append("text").attr("x", 0).attr("y", 25).text("Rank: " + selectedNode.rank)
+  selectedNodeArea.append("text").attr("x", 0).attr("y", 55).text("Significance Score Rank: " + selectedNode.sigRank)
+  selectedNodeArea.append("text").attr("x", 0).attr("y", 85).text("Significance Score: " + selectedNode.significance)
+
+
+  function update() {
+    // console.log("Update")
+    node.data(nodes)
+
+    svg.selectAll("circle")
+      .attr("fill", function (d) { return d.color })
+
+    selectedNodeArea.selectAll('*').remove()
+    selectedNodeArea.append("text")
+      .attr("y", -40)
+      .attr("text-anchor", "start")
+      .style("font-size", "24px")
+      .style("font-weight", "bold")
+      .text("Last clicked on board game")
+
+    selectedNodeArea.append("text").attr("x", 0).attr("y", -5).text("Title: " + selectedNode.title)
+    selectedNodeArea.append("text").attr("x", 0).attr("y", 25).text("Rank: " + selectedNode.rank)
+    selectedNodeArea.append("text").attr("x", 0).attr("y", 55).text("Significance Score Rank: " + selectedNode.sigRank)
+    selectedNodeArea.append("text").attr("x", 0).attr("y", 85).text("Significance Score: " + selectedNode.significance)
+  }
+
 }
