@@ -86,7 +86,10 @@ document.getElementById("id_vis_5_compare").addEventListener("click", () => {
   socket.emit("vis_5_compare");
   document.getElementById("divCheckbox").style.display = "none";
   removeVis_3();
-  document.getElementById("node_select").style.display = "flex";
+  document.getElementById("node_select1").style.display = "flex";
+  document.getElementById("node_select2").style.display = "flex";
+  document.getElementById("node_select3").style.display = "flex";
+  document.getElementById("node_select4").style.display = "flex";
   console.log("Vis 4");
 });
 
@@ -1005,22 +1008,62 @@ function createVis_5(data) {
 
   svg.selectAll("*").remove();
 
-  const select = d3.select("#node_select")
+  const select1 = d3.select("#node_select1")
+  const select2 = d3.select("#node_select2")
+  const select3 = d3.select("#node_select3")
+  const select4 = d3.select("#node_select4")
 
-  select.append("option")
-  .attr("value", "default")
-  .text("---choose a game---")
+  dropdown_data = [...vis5_data]
+  dropdown_data.unshift({title: "placeholder", id: 0, recommendations: []})
 
-  select
+  select1.append("option").attr("value", "default").text("---choose a game---");
+
+  select1
     .selectAll("option")
-    .data(vis5_data)
+    .data(dropdown_data)
     .enter()
     .append("option")
     .attr("value", (d) => d.id)
     .text((d) => d.title)
-    .sort((a, b) => d3.ascending(a.title, b.title))
+    .sort((a, b) => d3.ascending(a.title, b.title));
 
-  select.on("change", handleNodeSelect);
+  select2.append("option").attr("value", "default").text("---choose a game---");
+
+  select2
+    .selectAll("option")
+    .data(dropdown_data)
+    .enter()
+    .append("option")
+    .attr("value", (d) => d.id)
+    .text((d) => d.title)
+    .sort((a, b) => d3.ascending(a.title, b.title));
+
+  select3.append("option").attr("value", "default").text("---choose a game---");
+
+  select3
+    .selectAll("option")
+    .data(dropdown_data)
+    .enter()
+    .append("option")
+    .attr("value", (d) => d.id)
+    .text((d) => d.title)
+    .sort((a, b) => d3.ascending(a.title, b.title));
+
+  select4.append("option").attr("value", "default").text("---choose a game---");
+
+  select4
+    .selectAll("option")
+    .data(dropdown_data)
+    .enter()
+    .append("option")
+    .attr("value", (d) => d.id)
+    .text((d) => d.title)
+    .sort((a, b) => d3.ascending(a.title, b.title));
+
+  select1.on("change", handleNodeSelect);
+  select2.on("change", handleNodeSelect);
+  select3.on("change", handleNodeSelect);
+  select4.on("change", handleNodeSelect);
 
   const linksData = [];
   vis5_data.forEach((node) => {
@@ -1035,27 +1078,71 @@ function createVis_5(data) {
 
   // Function to handle the node selection
   function handleNodeSelect() {
-    const selectedNodeId = select.property("value");
+    const selectedNodeId1 = select1.property("value");
+    const selectedNodeId2 = select2.property("value");
+    const selectedNodeId3 = select3.property("value");
+    const selectedNodeId4 = select4.property("value");
 
-    console.log(selectedNodeId);
-
-    if (selectedNodeId == "default") {
-      filteredLinksData = linksData
-      filteredNodesData = vis5_data
+    if (
+      selectedNodeId1 == "default" &&
+      selectedNodeId2 == "default" &&
+      selectedNodeId3 == "default" &&
+      selectedNodeId4 == "default"
+    ) {
+      filteredLinksData = linksData;
+      filteredNodesData = vis5_data;
     } else {
-    // Filter the links to include only the ones connected to the selected node
-    filteredLinksData = linksData.filter(
-      (link) => link.source.id == selectedNodeId
-    );
+      // Filter the links to include only the ones connected to the selected node
+      //console.log(linksData.source.recommendations[0])
+      filteredLinksData = linksData.filter(
+        (link) =>
+          link.source.id == selectedNodeId1 ||
+          link.source.id == selectedNodeId2 ||
+          link.source.id == selectedNodeId3 ||
+          link.source.id == selectedNodeId4 ||
+          (link.target.id == selectedNodeId1 && link.target.recommendations.find(root => root == link.source.id)) ||
+          (link.target.id == selectedNodeId2 && link.target.recommendations.find(root => root == link.source.id)) ||
+          (link.target.id == selectedNodeId3 && link.target.recommendations.find(root => root == link.source.id)) ||
+          (link.target.id == selectedNodeId4 && link.target.recommendations.find(root => root == link.source.id))
+      )
 
-    // Filter the nodes to include the selected node and its connected nodes
-    filteredNodesData = vis5_data.filter(
-      (node) =>
-        node.id == selectedNodeId ||
-        filteredLinksData.some((link) => link.target.id == node.id)
-    );
+      console.log(filteredLinksData)
 
+      // Filter the nodes to include the selected node and its connected nodes
+      filteredNodesData = vis5_data.filter(
+        (node) =>
+          node.id == selectedNodeId1 ||
+          node.id == selectedNodeId2 ||
+          node.id == selectedNodeId3 ||
+          node.id == selectedNodeId4 ||
+          filteredLinksData.some((link) => link.target.id == node.id)
+      )
     }
+
+    select1.selectAll("option")
+    .attr("disabled", (d) => d.id == selectedNodeId2 || d.id == selectedNodeId3 || d.id == selectedNodeId4 ? "disabled" : null)
+    select2.selectAll("option")
+    .attr("disabled", (d) => d.id == selectedNodeId1 || d.id == selectedNodeId3 || d.id == selectedNodeId4 ? "disabled" : null)
+    select3.selectAll("option")
+    .attr("disabled", (d) => d.id == selectedNodeId1 || d.id == selectedNodeId2 || d.id == selectedNodeId4 ? "disabled" : null)
+    select4.selectAll("option")
+    .attr("disabled", (d) => d.id == selectedNodeId1 || d.id == selectedNodeId2 || d.id == selectedNodeId3 ? "disabled" : null)
+
+    function getNodeColor(nodeId) {
+      // Define color mapping
+      if (nodeId == selectedNodeId1){
+        return "red"
+      } else if (nodeId == selectedNodeId2) {
+        return "green"
+      } else if (nodeId == selectedNodeId3) {
+        return "yellow"
+      } else if (nodeId == selectedNodeId4) {
+        return "pink"
+      } else {
+        return "blue"
+      }
+    }
+
     // Remove the previous graph
     svg.selectAll("*").remove();
 
@@ -1093,8 +1180,7 @@ function createVis_5(data) {
       .append("circle")
       .attr("class", "node")
       .attr("r", 5)
-      .attr("fill", "blue")
-      .attr("fill", (d) => (d.id == selectedNodeId ? "red" : "blue"));
+      .attr("fill", (d) => getNodeColor(d.id))
 
     // Create the simulation with scaled dimensions
     const simulation = d3
@@ -1122,5 +1208,5 @@ function createVis_5(data) {
         .attr("cy", (d, i) => (d.y = Math.max(5, Math.min(height - 5, d.y))));
     }
   }
-  handleNodeSelect()
+  handleNodeSelect();
 }
