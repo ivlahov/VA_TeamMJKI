@@ -911,10 +911,10 @@ function createVis_6(data) {
       update()
     })
 
-  // node.call(d3.drag()
-  //   .on("start", dragstarted)
-  //   .on("drag", dragged)
-  //   .on("end", dragended));
+  node.call(d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended));
 
   function ticked() {
     link
@@ -928,27 +928,27 @@ function createVis_6(data) {
       .attr("cy", function (d) { return d.y - 3; });
   }
 
-  // //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
-  // // Reheat the simulation when drag starts, and fix the subject position.
-  // function dragstarted(event) {
-  //   if (!event.active) simulation.alphaTarget(0.3).restart();
-  //   event.subject.fx = event.subject.x;
-  //   event.subject.fy = event.subject.y;
-  // }
-  // //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
-  // // Update the subject (dragged node) position during drag.
-  // function dragged(event) {
-  //   event.subject.fx = event.x;
-  //   event.subject.fy = event.y;
-  // }
-  // //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
-  // // Restore the target alpha so the simulation cools after dragging ends.
-  // // Unfix the subject position now that it’s no longer being dragged.
-  // function dragended(event) {
-  //   if (!event.active) simulation.alphaTarget(0);
-  //   event.subject.fx = null;
-  //   event.subject.fy = null;
-  // }
+  //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
+  // Reheat the simulation when drag starts, and fix the subject position.
+  function dragstarted(event) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    event.subject.fx = event.subject.x;
+    event.subject.fy = event.subject.y;
+  }
+  //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
+  // Update the subject (dragged node) position during drag.
+  function dragged(event) {
+    event.subject.fx = event.x;
+    event.subject.fy = event.y;
+  }
+  //From https://observablehq.com/@d3/force-directed-graph/2?intent=fork
+  // Restore the target alpha so the simulation cools after dragging ends.
+  // Unfix the subject position now that it’s no longer being dragged.
+  function dragended(event) {
+    if (!event.active) simulation.alphaTarget(0);
+    event.subject.fx = null;
+    event.subject.fy = null;
+  }
 
 
   // invalidation.then(() => simulation.stop());
