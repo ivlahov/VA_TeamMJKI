@@ -165,7 +165,22 @@ function createVis(vis, data) {
         return false
       }
     })
+
+    data.forEach(game => {
+      let removeIDs = []
+      game.recommendations.fans_liked.forEach((rec, index) => {
+        if (data.findIndex(element => element.id === rec) === -1) {
+          removeIDs.push(index)
+        }
+      })
+      removeIDs.sort((a, b) => b - a)
+      removeIDs.forEach(index => {
+        game.recommendations.fans_liked.splice(index, 1)
+      })
+    })
   }
+
+  
 
 
   if (vis === "vis_1_designer") {
