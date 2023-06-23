@@ -20,6 +20,7 @@ let vis = null;
 let data = null;
 let kmeanData = null;
 let clusterHighlight = [false, false, false, false];
+var initialTransform = null;
 
 const socket = io();
 
@@ -49,6 +50,7 @@ socket.on("switch-vis", (visData) => {
 
 // Button Handler
 document.getElementById("id_vis_1_designer").addEventListener("click", () => {
+  clearVis5 ()
   socket.emit("vis_1_designer");
   document.getElementById("divCheckbox").style.display = "none";
   removeVis_3();
@@ -58,6 +60,7 @@ document.getElementById("id_vis_1_designer").addEventListener("click", () => {
 document
   .getElementById("id_vis_2_minage_minplaytime")
   .addEventListener("click", () => {
+    clearVis5 ()
     socket.emit("vis_2_minage_minplaytime");
     document.getElementById("divCheckbox").style.display = "none";
     removeVis_3();
@@ -66,6 +69,7 @@ document
 
 document.getElementById("id_vis_3_lda").addEventListener("click", () => {
   removeVis_3();
+  clearVis5 ()
   socket.emit("vis_3_lda");
   document.getElementById("divCheckbox").style.display = "none";
   console.log("Vis 3");
@@ -73,6 +77,7 @@ document.getElementById("id_vis_3_lda").addEventListener("click", () => {
 
 document.getElementById("id_vis_4_kmeans").addEventListener("click", () => {
   removeVis_3();
+  clearVis5 ()
   socket.emit("vis_4_kmeans");
   document.getElementById("cluster1").checked = false;
   document.getElementById("cluster2").checked = false;
@@ -83,6 +88,7 @@ document.getElementById("id_vis_4_kmeans").addEventListener("click", () => {
 });
 
 document.getElementById("id_vis_5_compare").addEventListener("click", () => {
+  clearVis5 ()
   socket.emit("vis_5_compare");
   document.getElementById("divCheckbox").style.display = "none";
   removeVis_3();
@@ -1083,12 +1089,6 @@ function createVis_5(data) {
     const selectedNodeId3 = select3.property("value");
     const selectedNodeId4 = select4.property("value");
 
-    const zoom = d3.zoom().on("zoom", zoomed)
-    const container = d3.select("#svgRoot")
-    container.call(zoom)
-
-    container.transition().duration(500).call(zoom.transform, d3.zoomIdentity)
-
     // Define tooltip constants
     const tooltipWidth = 300
     const tooltipHeight = 30
@@ -1119,7 +1119,6 @@ function createVis_5(data) {
       filteredNodesData = vis5_data;
     } else {
       // Filter the links to include only the ones connected to the selected node
-      //console.log(linksData.source.recommendations[0])
       filteredLinksData = linksData.filter(
         (link) =>
           link.source.id == selectedNodeId1 ||
@@ -1132,7 +1131,6 @@ function createVis_5(data) {
           (link.target.id == selectedNodeId4 && link.target.recommendations.find(root => root == link.source.id))
       )
 
-      console.log(filteredLinksData)
 
       // Filter the nodes to include the selected node and its connected nodes
       filteredNodesData = vis5_data.filter(
@@ -1157,15 +1155,15 @@ function createVis_5(data) {
     function getNodeColor(nodeId) {
       // Define color mapping
       if (nodeId == selectedNodeId1){
-        return "red"
+        return "#b2df8a"
       } else if (nodeId == selectedNodeId2) {
-        return "green"
+        return "#a6cee3"
       } else if (nodeId == selectedNodeId3) {
-        return "yellow"
+        return "#33a02c"
       } else if (nodeId == selectedNodeId4) {
-        return "pink"
+        return "#fb9a99"
       } else {
-        return "blue"
+        return "#1f78b4"
       }
     }
 
@@ -1178,7 +1176,7 @@ function createVis_5(data) {
       .enter()
       .append("line")
       .attr("class", "link")
-      .attr("stroke", "#B7B4B4")
+      .attr("stroke", "black")
       .attr("stroke-width", 1)
       .attr("marker-end", "url(#arrow)");
 
@@ -1196,7 +1194,7 @@ function createVis_5(data) {
       .attr("markerHeight", 6)
       .attr("orient", "auto")
       .append("svg:path")
-      .attr("fill", "#B7B4B4")
+      .attr("fill", "black")
       .attr("d", "M0,-5L10,0L0,5");
 
     // Create the node elements
@@ -1245,10 +1243,6 @@ function createVis_5(data) {
         .attr("cy", (d, i) => (d.y = Math.max(5, Math.min(height - 5, d.y))));
     }
 
-    function zoomed(event) {
-      svg.attr("transform", event.transform);
-    }
-
     function dragStarted(event, d) {
       if (!event.active) simulation.alphaTarget(0.3).restart()
       d.fx = d.x
@@ -1287,7 +1281,6 @@ function createVis_5(data) {
       } else if (selectedNodeId4 == "default") {
         select4.property("value", d.id)
       }
-      container.transition().duration(500).call(zoom.transform, d3.zoomIdentity)
       handleNodeSelect()
     }
 
@@ -1307,9 +1300,7 @@ function createVis_5(data) {
         CompareNodes.push(parseInt(selectedNodeId4))
       }
       AllNodes = [ClickedNode].concat(CompareNodes)
-      console.log(AllNodes)
       AllNodesData = AllNodes.map(id => data.find(obj => obj.id == id))
-      console.log(AllNodesData)
 
       if (AllNodesData.length == 1){
         mechanics = []
@@ -1321,7 +1312,7 @@ function createVis_5(data) {
           categories.push(AllNodesData[0].types.categories[i].name)
         }
         //If you want to make the text into less lines you need to ass line breaks \n
-        text = `Data for ${AllNodesData[0].title}:
+        text = `\nData for ${AllNodesData[0].title}:
         Min players: ${AllNodesData[0].minplayers}
         Max. players: ${AllNodesData[0].maxplayers}
         Min. time: ${AllNodesData[0].minplaytime}
@@ -1329,11 +1320,142 @@ function createVis_5(data) {
         Min. age: ${AllNodesData[0].minage}
         Game mechanics:\n ${mechanics.join("\n")}
         Game categories:\n ${categories.join("\n")}`
+      } else {
+        allTexts = [``, ``, ``, ``]
+        mechanicsNode = []
+        for (i=0; i<AllNodesData[0].types.mechanics.length; i++){
+          mechanicsNode.push(AllNodesData[0].types.mechanics[i].name)
+        }
+        categoriesNode = []
+        for (i=0; i<AllNodesData[0].types.categories.length; i++){
+          categoriesNode.push(AllNodesData[0].types.categories[i].name)
+        }
+        for (i=1;i<AllNodesData.length;i++){
+          percentMachtingMechanic = 0
+          percentMachtingCategories = 0
+
+          machtingMechanics = []
+          machtingCategories = []
+
+          mechnicsMenuNode = []
+          categoriesMenuNode = []
+
+          for (j=0; j<AllNodesData[i].types.mechanics.length; j++){
+            mechnicsMenuNode.push(AllNodesData[i].types.mechanics[j].name)
+          }
+
+          for (j=0; j<AllNodesData[i].types.categories.length; j++){
+            categoriesMenuNode.push(AllNodesData[i].types.categories[j].name)
+          }
+
+          for (j=0; j < mechanicsNode.length; j++){
+            if (mechnicsMenuNode.includes(mechanicsNode[j])) {
+              machtingMechanics.push(mechanicsNode[j])
+            }
+          }
+          for (j=0; j < categoriesNode.length; j++){
+            if (categoriesMenuNode.includes(categoriesNode[j])) {
+              machtingCategories.push(categoriesNode[j])
+            }
+          }
+          combinedUniqueElementsMechanics = [...new Set([...mechanicsNode, ...mechnicsMenuNode])]
+          percentMachtingMechanic = Math.round((machtingMechanics.length / combinedUniqueElementsMechanics.length) * 100)
+
+          combinedUniqueElementsCategories = [...new Set([...categoriesNode, ...categoriesMenuNode])]
+          percentMachtingCategories = Math.round((machtingCategories.length / combinedUniqueElementsCategories.length) * 100)
+
+          nodeMinplayers = AllNodesData[0].minplayers-AllNodesData[i].minplayers
+          if (nodeMinplayers == 0){
+            nodeMinplayers = `same (${AllNodesData[0].minplayers})`
+          } else if (nodeMinplayers > 0) {
+            nodeMinplayers = "+"+nodeMinplayers+" ("+AllNodesData[0].minplayers+")"
+          } else {
+            nodeMinplayers = nodeMinplayers+" ("+AllNodesData[0].minplayers+")"
+          }
+
+          nodeMaxplayers = AllNodesData[0].maxplayers-AllNodesData[i].maxplayers
+          if (nodeMaxplayers == 0){
+            nodeMaxplayers = `same (${AllNodesData[0].maxplayers})`
+          } else if (nodeMaxplayers > 0) {
+            nodeMaxplayers = "+"+nodeMaxplayers+" ("+AllNodesData[0].maxplayers+")"
+          } else {
+            nodeMaxplayers = nodeMaxplayers+" ("+AllNodesData[0].maxplayers+")"
+          }
+
+          nodeMinplaytime = AllNodesData[0].minplaytime-AllNodesData[i].minplaytime
+          if (nodeMinplaytime == 0){
+            nodeMinplaytime = `same (${AllNodesData[0].minplaytime})`
+          } else if (nodeMinplaytime > 0) {
+            nodeMinplaytime = "+"+nodeMinplaytime+" ("+AllNodesData[0].minplaytime+")"
+          } else {
+            nodeMinplaytime = nodeMinplaytime+" ("+AllNodesData[0].minplaytime+")"
+          }
+
+          nodeMaxplaytime = AllNodesData[0].maxplaytime-AllNodesData[i].maxplaytime
+          if (nodeMaxplaytime == 0){
+            nodeMaxplaytime = `same (${AllNodesData[0].maxplaytime})`
+          } else if (nodeMaxplaytime > 0) {
+            nodeMaxplaytime = "+"+nodeMaxplaytime+" ("+AllNodesData[0].maxplaytime+")"
+          } else {
+            nodeMaxplaytime = nodeMaxplaytime+" ("+AllNodesData[0].maxplaytime+")"
+          }
+
+          nodeMinage = AllNodesData[0].minage-AllNodesData[i].minage
+          if (nodeMinage == 0){
+            nodeMinage = `same (${AllNodesData[0].minage})`
+          } else if (nodeMinage > 0) {
+            nodeMinage = "+"+nodeMinage+" ("+AllNodesData[0].minage+")"
+          } else {
+            nodeMinage = nodeMinage+" ("+AllNodesData[0].minage+")"
+          }
+
+          console.log(AllNodesData[0])
+          console.log(AllNodesData[i])
+
+          allTexts[i-1] = `Comparison ${AllNodesData[0].title} to ${AllNodesData[i].title}\n
+          Min players: ${nodeMinplayers}
+          Max. players: ${nodeMaxplayers}
+          Min. time: ${nodeMinplaytime}
+          Max. time: ${nodeMaxplaytime}
+          Min. age: ${nodeMinage}\n
+          Matching mechanics (${percentMachtingMechanic}%):
+          ${machtingMechanics.join("\n")}\n
+          Matching categories (${percentMachtingCategories}%):
+          ${machtingCategories.join("\n")}\n\n`
+        }
+        text = `Choosen Game for Comparison:
+        ${AllNodesData[0].title}\n\n` + allTexts[0] + allTexts [1] + allTexts [2] + allTexts [3]
       }
 
       d3.select("#analytics")
+         .style("max-height", (window.innerHeight-200) + "px")
         .text(text)
     }
   }
-  handleNodeSelect();
+  handleNodeSelect()
+}
+
+function clearVis5 () {
+  svg.selectAll("*").remove()
+
+  document.getElementById("node_select1").style.display = "none";
+  document.getElementById("node_select2").style.display = "none";
+  document.getElementById("node_select3").style.display = "none";
+  document.getElementById("node_select4").style.display = "none";
+
+  text = ""
+
+  d3.select("#analytics")
+  .style("max-height", Number.MAX_SAFE_INTEGER + "px")
+  .text(text)
+
+  const select1 = d3.select("#node_select1")
+  const select2 = d3.select("#node_select2")
+  const select3 = d3.select("#node_select3")
+  const select4 = d3.select("#node_select4")
+
+  select1.selectAll("option").remove()
+  select2.selectAll("option").remove()
+  select3.selectAll("option").remove()
+  select4.selectAll("option").remove()
 }

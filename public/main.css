@@ -118,7 +118,8 @@ body {
   accent-color: green;
 }
 
-.text {
+#analytics {
   white-space: pre-wrap;
   white-space: pre-line;
+  overflow: auto;
 }
