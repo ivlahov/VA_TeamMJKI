@@ -117,3 +117,8 @@ body {
 #cluster4 {
   accent-color: green;
 }
+
+.text {
+  white-space: pre-wrap;
+  white-space: pre-line;
+}

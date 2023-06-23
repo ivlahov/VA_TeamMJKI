@@ -1083,6 +1083,32 @@ function createVis_5(data) {
     const selectedNodeId3 = select3.property("value");
     const selectedNodeId4 = select4.property("value");
 
+    const zoom = d3.zoom().on("zoom", zoomed)
+    const container = d3.select("#svgRoot")
+    container.call(zoom)
+
+    container.transition().duration(500).call(zoom.transform, d3.zoomIdentity)
+
+    // Define tooltip constants
+    const tooltipWidth = 300
+    const tooltipHeight = 30
+    const tooltipPadding = 5
+
+    // Create a tooltip element
+    const tooltip = d3
+      .select("body")
+      .append("div")
+      .attr("class", "tooltip")
+     .style("opacity", 0)
+      .style("position", "absolute")
+     .style("pointer-events", "none")
+     .style("background-color", "rgba(0, 0, 0, 0.8)")
+     .style("color", "#fff")
+      .style("padding", `${tooltipPadding}px`)
+     .style("width", `${tooltipWidth}px`)
+     .style("height", `${tooltipHeight}px`)
+     .style("text-align", "center");
+
     if (
       selectedNodeId1 == "default" &&
       selectedNodeId2 == "default" &&
@@ -1152,7 +1178,7 @@ function createVis_5(data) {
       .enter()
       .append("line")
       .attr("class", "link")
-      .attr("stroke", "black")
+      .attr("stroke", "#B7B4B4")
       .attr("stroke-width", 1)
       .attr("marker-end", "url(#arrow)");
 
@@ -1170,6 +1196,7 @@ function createVis_5(data) {
       .attr("markerHeight", 6)
       .attr("orient", "auto")
       .append("svg:path")
+      .attr("fill", "#B7B4B4")
       .attr("d", "M0,-5L10,0L0,5");
 
     // Create the node elements
@@ -1181,6 +1208,16 @@ function createVis_5(data) {
       .attr("class", "node")
       .attr("r", 5)
       .attr("fill", (d) => getNodeColor(d.id))
+      .call(
+        d3
+          .drag()
+          .on("start", dragStarted)
+          .on("drag", dragged)
+      )
+      .on("mouseover", handleMouseOver)
+      .on("mouseout", handleMouseOut)
+      .on("dblclick", handleDoubleClick)
+      .on("click", handleClick)
 
     // Create the simulation with scaled dimensions
     const simulation = d3
@@ -1206,6 +1243,96 @@ function createVis_5(data) {
       node
         .attr("cx", (d, i) => (d.x = Math.max(5, Math.min(width - 5, d.x))))
         .attr("cy", (d, i) => (d.y = Math.max(5, Math.min(height - 5, d.y))));
+    }
+
+    function zoomed(event) {
+      svg.attr("transform", event.transform);
+    }
+
+    function dragStarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart()
+      d.fx = d.x
+      d.fy = d.y
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x
+      d.fy = event.y
+    }
+
+    function handleMouseOver(event, d) {
+      // Show the tooltip and position it next to the node
+      tooltip
+        .text(d.title)
+        .style("left", `${event.pageX + tooltipPadding}px`)
+        .style("top", `${event.pageY + tooltipPadding}px`)
+        .style("opacity", 1)
+    }
+
+    function handleMouseOut() {
+       // Hide the tooltip
+       tooltip.style("opacity", 0)
+    }
+
+    function handleDoubleClick(event, d) {
+      handleMouseOut()
+       // Update the value of the dropdown menu to the double-clicked node's id
+      if (selectedNodeId1 != d.id && selectedNodeId2 != d.id && selectedNodeId3 != d.id && selectedNodeId4 != d.id)
+      if (selectedNodeId1 == "default") {
+        select1.property("value", d.id)
+      } else if (selectedNodeId2 == "default") {
+        select2.property("value", d.id)
+      } else if (selectedNodeId3 == "default") {
+        select3.property("value", d.id)
+      } else if (selectedNodeId4 == "default") {
+        select4.property("value", d.id)
+      }
+      container.transition().duration(500).call(zoom.transform, d3.zoomIdentity)
+      handleNodeSelect()
+    }
+
+    function handleClick(event, d) {
+      ClickedNode = d.id
+      CompareNodes = []
+      if (selectedNodeId1 != "default" && selectedNodeId1 != ClickedNode){
+        CompareNodes.push(parseInt(selectedNodeId1))
+      }
+      if (selectedNodeId2 != "default" && selectedNodeId2 != ClickedNode){
+        CompareNodes.push(parseInt(selectedNodeId2))
+      }
+      if (selectedNodeId3 != "default" && selectedNodeId3 != ClickedNode){
+        CompareNodes.push(parseInt(selectedNodeId3))
+      }
+      if (selectedNodeId4 != "default" && selectedNodeId4 != ClickedNode){
+        CompareNodes.push(parseInt(selectedNodeId4))
+      }
+      AllNodes = [ClickedNode].concat(CompareNodes)
+      console.log(AllNodes)
+      AllNodesData = AllNodes.map(id => data.find(obj => obj.id == id))
+      console.log(AllNodesData)
+
+      if (AllNodesData.length == 1){
+        mechanics = []
+        for (i=0; i<AllNodesData[0].types.mechanics.length; i++){
+          mechanics.push(AllNodesData[0].types.mechanics[i].name)
+        }
+        categories = []
+        for (i=0; i<AllNodesData[0].types.categories.length; i++){
+          categories.push(AllNodesData[0].types.categories[i].name)
+        }
+        //If you want to make the text into less lines you need to ass line breaks \n
+        text = `Data for ${AllNodesData[0].title}:
+        Min players: ${AllNodesData[0].minplayers}
+        Max. players: ${AllNodesData[0].maxplayers}
+        Min. time: ${AllNodesData[0].minplaytime}
+        Max. time: ${AllNodesData[0].maxplaytime}
+        Min. age: ${AllNodesData[0].minage}
+        Game mechanics:\n ${mechanics.join("\n")}
+        Game categories:\n ${categories.join("\n")}`
+      }
+
+      d3.select("#analytics")
+        .text(text)
     }
   }
   handleNodeSelect();
