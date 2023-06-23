@@ -8,7 +8,7 @@ svg {
   margin: 0;
   height: 100%;
   width: 100%;
-  
+  overflow: hidden;
 }
 
 /* Grid-Layouting the Dashboard */
@@ -75,6 +75,10 @@ body {
   border-color: white;
 }
 
+.hidden_2 {
+  display: none;
+}
+
 .hidden {
   display: none;
   flex-direction: column;
@@ -112,4 +116,10 @@ body {
 
 #cluster4 {
   accent-color: green;
+}
+
+#analytics {
+  white-space: pre-wrap;
+  white-space: pre-line;
+  overflow: auto;
 }
