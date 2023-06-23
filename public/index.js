@@ -106,6 +106,7 @@ document.getElementById("id_vis_5_compare").addEventListener("click", () => {
 });
 
 document.getElementById("id_vis_6_significance").addEventListener("click", () => {
+  clearVis5 ()
   removeVis_3()
   socket.emit("vis_6_significance")
   document.getElementById("divCheckbox").style.display = "none"
